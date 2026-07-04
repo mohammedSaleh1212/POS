@@ -1,0 +1,89 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js" // FIX 1: Added "-js"
+  output   = "../src/generated/prisma" // FIX 2: Uncommented and set path
+}
+
+model Category {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  products  Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id            Int       @id @default(autoincrement())
+  categoryId    Int?      @map("category_id")
+  name          String
+  sku           String?   @unique
+  barcode       String?   @unique
+  price         Decimal   @db.Decimal(10, 2)
+  stockQuantity Int       @default(0) @map("stock_quantity")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @default(now()) @map("updated_at")
+
+  category  Category?  @relation(fields: [categoryId], references: [id])
+  saleItems SaleItem[]
+
+  @@map("products")
+}
+
+model Customer {
+  id          Int      @id @default(autoincrement())
+  fullName    String?  @map("full_name")
+  phoneNumber String?  @map("phone_number")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  sales Sale[]
+
+  @@map("customers")
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  fullName     String   @map("full_name")
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         String   @default("cashier")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  sales Sale[]
+
+  @@map("users")
+}
+
+model Sale {
+  id            Int      @id @default(autoincrement())
+  customerId    Int?     @map("customer_id")
+  userId        Int?     @map("user_id")
+  totalAmount   Decimal  @db.Decimal(10, 2) @map("total_amount")
+  paymentMethod String   @map("payment_method")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  customer Customer? @relation(fields: [customerId], references: [id])
+  user     User?     @relation(fields: [userId], references: [id])
+
+  items SaleItem[]
+
+  @@map("sales")
+}
+
+model SaleItem {
+  id         Int     @id @default(autoincrement())
+  saleId     Int     @map("sale_id")
+  productId  Int     @map("product_id")
+  quantity   Int
+  unitPrice  Decimal @db.Decimal(10, 2) @map("unit_price")
+  lineTotal  Decimal @db.Decimal(10, 2) @map("line_total")
+
+  sale    Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("sale_items")
+}
