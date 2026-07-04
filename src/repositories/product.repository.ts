@@ -1,12 +1,36 @@
-// 1. Import the single instance of Prisma you configured
-import { prisma } from '../db/prisma'; 
+// src/repositories/product.repository.ts
 
-// 2. Import the auto-generated types from your custom output folder
-import { Prisma } from '../generated/prisma';
+import { prisma } from "../db/prisma";
+import { Prisma } from "../generated/prisma";
 
-// Use the exact generated type for creating a product
-export const create = async (data: Prisma.ProductCreateInput) => {
-  return prisma.product.create({
-    data,
-  });
+export const productRepository = {
+  create: async (data: Prisma.ProductCreateInput) => {
+    return prisma.product.create({ data });
+  },
+
+  findAll: async () => {
+    return prisma.product.findMany();
+  },
+
+  findById: async (id: number) => {
+    return prisma.product.findUnique({
+      where: { id },
+    });
+  },
+
+  update: async (
+    id: number,
+    data: Prisma.ProductUpdateInput
+  ) => {
+    return prisma.product.update({
+      where: { id },
+      data,
+    });
+  },
+
+  delete: async (id: number) => {
+    return prisma.product.delete({
+      where: { id },
+    });
+  },
 };

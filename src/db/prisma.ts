@@ -2,8 +2,9 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 // FIX 3: Import strictly from your custom generated folder
 import { PrismaClient } from '../generated/prisma'; 
+import { config } from '../config/index';
 
-const connectionString = process.env.DATABASE_URL;
+const connectionString = config.databaseUrl;
 
 if (!connectionString) {
   throw new Error('FATAL: DATABASE_URL is undefined in .env');
