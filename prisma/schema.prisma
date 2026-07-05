@@ -7,6 +7,53 @@ generator client {
   output   = "../src/generated/prisma" // FIX 2: Uncommented and set path
 }
 
+// Define the invoice types the coach requested
+enum InvoiceType {
+  SALE             // بيع
+  PURCHASE         // شراء
+  RETURN_SALE      // مرتجع بيع
+  RETURN_PURCHASE  // مرتجع شراء
+}
+
+// 1. جدول الاعدادات العامة (General Settings)
+model GeneralSetting {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("general_settings")
+}
+
+// 2. جدول صلاحيات (Permissions/Roles)
+model Role {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  permissions Json     // Storing permissions as a JSON array (e.g., ["create_invoice", "view_reports"])
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  users       User[]
+
+  @@map("roles")
+}
+
+// 3. جدول المستخدمين (Users)
+model User {
+  id           Int      @id @default(autoincrement())
+  fullName     String   @map("full_name")
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  roleId       Int      @map("role_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  role         Role            @relation(fields: [roleId], references: [id])
+  invoices     Invoice[]
+  movements    DailyMovement[]
+
+  @@map("users")
+}
+
 model Category {
   id        Int       @id @default(autoincrement())
   name      String    @unique
@@ -17,73 +64,79 @@ model Category {
   @@map("categories")
 }
 
+// 4. جدول المواد (Items/Products)
 model Product {
-  id            Int       @id @default(autoincrement())
-  categoryId    Int?      @map("category_id")
+  id            Int      @id @default(autoincrement())
+  categoryId    Int?     @map("category_id")
   name          String
-  sku           String?   @unique
-  barcode       String?   @unique
-  price         Decimal   @db.Decimal(10, 2)
-  stockQuantity Int       @default(0) @map("stock_quantity")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @default(now()) @map("updated_at")
+  sku           String?  @unique
+  barcode       String?  @unique
+  price         Decimal  @db.Decimal(10, 2)
+  stockQuantity Int      @default(0) @map("stock_quantity")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
-  category  Category?  @relation(fields: [categoryId], references: [id])
-  saleItems SaleItem[]
+  category      Category?     @relation(fields: [categoryId], references: [id])
+  invoiceItems  InvoiceItem[]
 
   @@map("products")
 }
 
+// Customer / Supplier table. 
+// Note: Since you now have "Purchases", you will need this to act as a generic contact or add a separate Supplier table.
 model Customer {
   id          Int      @id @default(autoincrement())
   fullName    String?  @map("full_name")
   phoneNumber String?  @map("phone_number")
   createdAt   DateTime @default(now()) @map("created_at")
 
-  sales Sale[]
+  invoices    Invoice[]
 
   @@map("customers")
 }
 
-model User {
-  id           Int      @id @default(autoincrement())
-  fullName     String   @map("full_name")
-  email        String   @unique
-  passwordHash String   @map("password_hash")
-  role         String   @default("cashier")
-  createdAt    DateTime @default(now()) @map("created_at")
+// 5. جدول الفواتير (Invoices - Replaces Sales)
+model Invoice {
+  id            Int         @id @default(autoincrement())
+  type          InvoiceType // شراء - بيع - مرتجع شراء - مرتج بيع
+  customerId    Int?        @map("customer_id") // Nullable if it's a walk-in or a supplier purchase
+  userId        Int         @map("user_id")
+  totalAmount   Decimal     @db.Decimal(10, 2) @map("total_amount")
+  paymentMethod String      @map("payment_method")
+  createdAt     DateTime    @default(now()) @map("created_at")
 
-  sales Sale[]
+  customer      Customer?   @relation(fields: [customerId], references: [id])
+  user          User        @relation(fields: [userId], references: [id])
+  items         InvoiceItem[]
 
-  @@map("users")
+  @@map("invoices")
 }
 
-model Sale {
-  id            Int      @id @default(autoincrement())
-  customerId    Int?     @map("customer_id")
-  userId        Int?     @map("user_id")
-  totalAmount   Decimal  @db.Decimal(10, 2) @map("total_amount")
-  paymentMethod String   @map("payment_method")
-  createdAt     DateTime @default(now()) @map("created_at")
+// 6. جدول بنود الفواتير (Invoice Items - Replaces SaleItems)
+model InvoiceItem {
+  id          Int     @id @default(autoincrement())
+  invoiceId   Int     @map("invoice_id")
+  productId   Int     @map("product_id")
+  quantity    Int
+  unitPrice   Decimal @db.Decimal(10, 2) @map("unit_price")
+  lineTotal   Decimal @db.Decimal(10, 2) @map("line_total")
 
-  customer Customer? @relation(fields: [customerId], references: [id])
-  user     User?     @relation(fields: [userId], references: [id])
+  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product     Product @relation(fields: [productId], references: [id])
 
-  items SaleItem[]
-
-  @@map("sales")
+  @@map("invoice_items")
 }
 
-model SaleItem {
-  id         Int     @id @default(autoincrement())
-  saleId     Int     @map("sale_id")
-  productId  Int     @map("product_id")
-  quantity   Int
-  unitPrice  Decimal @db.Decimal(10, 2) @map("unit_price")
-  lineTotal  Decimal @db.Decimal(10, 2) @map("line_total")
+// 7. جدول الحركة اليومية (Daily Movement)
+model DailyMovement {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  type        String   // e.g., "CASH_IN", "CASH_OUT", "SHIFT_START", "SHIFT_END"
+  amount      Decimal  @db.Decimal(10, 2)
+  description String?  // Reason for the movement
+  createdAt   DateTime @default(now()) @map("created_at")
 
-  sale    Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
 
-  @@map("sale_items")
+  @@map("daily_movements")
 }
