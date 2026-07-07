@@ -3,7 +3,7 @@
 import { Router } from "express";
 import * as productController from "../controllers/product.controller";
 import { authenticate } from "../middlewares/tempAuth";
-import { validate } from "../middlewares/zodMiddleware";
+import { validate } from "../middlewares/zodValidationMiddleware";
 
 const router = Router();
 

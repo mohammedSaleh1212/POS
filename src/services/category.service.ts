@@ -1,11 +1,12 @@
 // src/services/category.service.ts
 
+import { AppError } from "../middlewares/errorHandler";
 import { categoryRepository } from "../repositories/category.repository";
 import { z } from 'zod';
 
 export const createCategorySchema = z.object({
 
-    name: z.string().min(2, "Category name is too short"),
+    name: z.string().min(2, "CATEGORY_NAME_TOO_SHORT"),
 
 });
 
@@ -19,7 +20,10 @@ const existing =
   await categoryRepository.findByName(data.name);
 
 if (existing) {
-  throw new Error("Category already exists");
+  throw new AppError(
+    409,
+    "CATEGORY_ALREADY_EXISTS"
+  );
 }
 
   return categoryRepository.create(data);
@@ -46,7 +50,7 @@ export const updateCategory = async (
   const category = await categoryRepository.findById(id);
 
   if (!category) {
-    throw new Error("Category not found");
+    throw new AppError(404, "CATEGORY_NOT_FOUND");
   }
 
   return categoryRepository.update(id, data);
@@ -56,7 +60,7 @@ export const deleteCategory = async (id: number) => {
   const category = await categoryRepository.findById(id);
 
   if (!category) {
-    throw new Error("Category not found");
+    throw new AppError(404, "CATEGORY_NOT_FOUND");
   }
 
   return categoryRepository.delete(id);

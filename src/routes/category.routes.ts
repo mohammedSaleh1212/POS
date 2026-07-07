@@ -2,7 +2,7 @@
 
 import { Router } from "express";
 import * as categoryController from "../controllers/category.controller";
-import { validate } from "../middlewares/zodMiddleware";
+import { validate } from "../middlewares/zodValidationMiddleware";
 import { createCategorySchema } from "../services/category.service";
 
 const router = Router();

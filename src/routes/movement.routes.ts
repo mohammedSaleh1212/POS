@@ -1,7 +1,7 @@
 import { Router } from "express";
 import * as movementController from "../controllers/movement.controller";
 import { authenticate } from "../middlewares/tempAuth";
-import { validate } from "../middlewares/zodMiddleware";
+import { validate } from "../middlewares/zodValidationMiddleware";
 import { endShiftSchema, startShiftSchema } from "../controllers/movement.controller";
 
 const router = Router();
