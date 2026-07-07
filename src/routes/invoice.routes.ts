@@ -6,5 +6,6 @@ const router = Router();
 
 // Notice: authenticate is required to attach req.user.id
 router.post("/", authenticate, invoiceController.create);
+router.get("/", authenticate, invoiceController.findAll);
 
 export default router;

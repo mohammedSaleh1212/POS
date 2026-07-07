@@ -1,0 +1,275 @@
+{
+	"info": {
+		"name": "POS / ERP System Tests",
+		"description": "API endpoints for the new Invoice and Daily Movement architecture.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Daily Movements (Shifts)",
+			"item": [
+				{
+					"name": "Start Shift (Morning)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer mock-token",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"startingCash\": 100.00\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/movements/shift/start",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"movements",
+								"shift",
+								"start"
+							]
+						}
+					}
+				},
+				{
+					"name": "Preview Expected Cash (Audit)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer mock-token",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:3000/api/movements/shift/preview",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"movements",
+								"shift",
+								"preview"
+							]
+						}
+					}
+				},
+				{
+					"name": "End Shift (Night)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer mock-token",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"endingCash\": 220.50\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/movements/shift/end",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"movements",
+								"shift",
+								"end"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "2. Invoices & Stock",
+			"item": [
+				{
+					"name": "Create Purchase Invoice (Add Stock)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer mock-token",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"type\": \"PURCHASE\",\n  \"totalAmount\": 500.00,\n  \"paymentMethod\": \"CASH\",\n  \"items\": [\n    {\n      \"productId\": 1,\n      \"quantity\": 50,\n      \"unitPrice\": 10.00\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/invoices",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"invoices"
+							]
+						}
+					}
+				},
+				{
+					"name": "Create Sale Invoice (Sell Stock)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer mock-token",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"type\": \"SALE\",\n  \"customerId\": null,\n  \"totalAmount\": 120.50,\n  \"paymentMethod\": \"CASH\",\n  \"items\": [\n    {\n      \"productId\": 1,\n      \"quantity\": 2,\n      \"unitPrice\": 60.25\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/invoices",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"invoices"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get All Invoices (History)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer mock-token",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:3000/api/invoices",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"invoices"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "3. Products",
+			"item": [
+				{
+					"name": "Create Product",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer mock-token",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Test Item\",\n  \"price\": 60.25,\n  \"sku\": \"TST-001\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/products",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"products"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Products (Check Stock)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer mock-token",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:3000/api/products",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"products"
+							]
+						}
+					}
+				}
+			]
+		}
+	]
+}

@@ -68,3 +68,29 @@ export const createInvoice = async (data: any, userId: number) => {
     return invoice;
   });
 };
+export const getInvoices = async (userId?: number) => {
+  // If a userId is passed, we fetch only their invoices (e.g., for a cashier's history).
+  // If omitted, we fetch all (e.g., for an admin dashboard).
+  const whereClause = userId ? { userId } : {};
+
+  return prisma.invoice.findMany({
+    where: whereClause,
+    orderBy: { createdAt: "desc" },
+    include: {
+      items: {
+        include: {
+          product: {
+            select: { name: true, sku: true } // Fetch product names for the receipt
+          }
+        }
+      },
+      user: {
+        select: { fullName: true } // Know who made the sale
+      },
+      customer: {
+        select: { fullName: true, phoneNumber: true }
+      }
+    },
+    take: 100 // Prevent massive payload crashes. Implement real pagination later.
+  });
+};
