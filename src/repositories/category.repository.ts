@@ -1,7 +1,6 @@
 // src/repositories/category.repository.ts
 
 import { prisma } from "../db/prisma";
-import { Prisma } from "../generated/prisma";
 import { CreateCategoryDTO } from "../services/category.service";
 
 export const categoryRepository = {
