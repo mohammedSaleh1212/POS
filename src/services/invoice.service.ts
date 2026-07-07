@@ -1,22 +1,14 @@
 import { Decimal } from "@prisma/client/runtime/wasm-compiler-edge";
 import { prisma } from "../db/prisma";
 import { InvoiceType } from "../generated/prisma";
-interface InvoiceItemInput {
-  productId: number;
-  quantity: number;
-  unitPrice?: number; // Client can now send this, but we control when to trust it
-}
+import { CreateInvoiceInput } from "../controllers/invoice.controller";
 
-interface CreateInvoiceInput {
-  items: InvoiceItemInput[];
-  type: InvoiceType;
-  customerId?: number;
-  paymentMethod: string;
-}
+
+
 export const createInvoice = async (data: CreateInvoiceInput, userId: number) => {
-  if (!data.items || data.items.length === 0) {
-    throw new Error("Invoice must contain at least one item.");
-  }
+  // if (!data.items || data.items.length === 0) {
+  //   throw new Error("Invoice must contain at least one item.");
+  // }
 
   return prisma.$transaction(async (tx) => {
     // 1. Fetch all products at once to establish the source of truth

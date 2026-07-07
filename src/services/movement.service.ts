@@ -2,6 +2,7 @@ import { prisma } from "../db/prisma";
 import { InvoiceType } from "../generated/prisma";
 
 export const openShift = async (userId: number, startingCash: number) => {
+  
   const activeShift = await prisma.dailyMovement.findFirst({
     where: { 
       userId, 

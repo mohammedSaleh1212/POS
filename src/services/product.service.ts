@@ -3,6 +3,13 @@ import { prisma } from "../db/prisma";
 import { CreateProductDTO, UpdateProductDTO } from "../controllers/product.controller";
 
 export const createProduct = async (data: CreateProductDTO) => {
+  const existingCategory = await prisma.category.findUnique({
+    where: { id: data.categoryId }
+  });
+
+  if (!existingCategory) {
+    throw new Error("Category not found");
+  }
   const existingSku = await prisma.product.findUnique({
     where: { sku: data.sku }
   });
