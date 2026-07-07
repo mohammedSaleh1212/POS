@@ -13,16 +13,14 @@ export const InvoiceItemSchema = z.object({
 
 // Wrapped in 'body' to match your existing middleware pattern
 export const CreateInvoiceSchema = z.object({
-  body: z.object({
     type: InvoiceTypeEnum,
     paymentMethod: PaymentMethodEnum,
     customerId: z.number().int().positive().optional(),
     items: z.array(InvoiceItemSchema).min(1),
-  }),
 });
 
 // Infer types accurately from the internal 'body' object
-export type CreateInvoiceInput = z.infer<typeof CreateInvoiceSchema>['body'];
+export type CreateInvoiceInput = z.infer<typeof CreateInvoiceSchema>;
 export type InvoiceItemInput = z.infer<typeof InvoiceItemSchema>;
 
 

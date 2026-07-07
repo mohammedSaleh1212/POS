@@ -3,15 +3,11 @@ import * as movementService from "../services/movement.service";
 import z from "zod";
 // movement.schema.ts
 export const startShiftSchema = z.object({
-  body: z.object({
     startingCash: z.coerce.number().nonnegative("Starting cash must be 0 or greater"),
-  })
 });
 // movement.schema.ts
 export const endShiftSchema = z.object({
-  body: z.object({
     endingCash: z.coerce.number().nonnegative("Ending cash must be a valid number"),
-  })
 });
 export const startShift = async (req: Request, res: Response) => {
   try {

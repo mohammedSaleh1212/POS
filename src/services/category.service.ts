@@ -1,17 +1,16 @@
 // src/services/category.service.ts
 
-import { Prisma } from "../generated/prisma";
 import { categoryRepository } from "../repositories/category.repository";
 import { z } from 'zod';
 
 export const createCategorySchema = z.object({
-  body: z.object({
+
     name: z.string().min(2, "Category name is too short"),
-  })
+
 });
 
 // Extract just the body payload type for your service
-export type CreateCategoryDTO = z.infer<typeof createCategorySchema>['body'];
+export type CreateCategoryDTO = z.infer<typeof createCategorySchema>;
 
 export const createCategory = async (
   data: CreateCategoryDTO

@@ -6,26 +6,22 @@ import * as productService from "../services/product.service";
 import { z } from 'zod';
 
 export const createProductSchema = z.object({
-  body: z.object({
     name: z.string().min(2, "Product name is required"),
     sku: z.string().min(3, "SKU is required"),
     barcode: z.string().length(13, "Barcode must be exactly 13 characters").nullable().optional(),
     price: z.coerce.number().positive("Price must be greater than zero"),
     stockQuantity: z.number().int().nonnegative("Stock cannot be negative"),
     categoryId: z.number().int().positive("Invalid category ID")
-  })
 });
 // product.schema.ts
 export const updateProductSchema = z.object({
-  body: z.object({
     name: z.string().min(2).optional(),
     sku: z.string().min(3).optional(),
     price: z.coerce.number().positive().optional(),
-  })
 });
 
-export type UpdateProductDTO = z.infer<typeof updateProductSchema>['body'];
-export type CreateProductDTO = z.infer<typeof createProductSchema>['body'];
+export type UpdateProductDTO = z.infer<typeof updateProductSchema>;
+export type CreateProductDTO = z.infer<typeof createProductSchema>;
 
 export const create = async (req: Request, res: Response) => {
   try {

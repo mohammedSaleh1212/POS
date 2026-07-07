@@ -3,13 +3,13 @@
 import { Router } from "express";
 import * as productController from "../controllers/product.controller";
 import { authenticate } from "../middlewares/tempAuth";
-import { validateRequest } from "../middlewares/zodMiddleware";
+import { validate } from "../middlewares/zodMiddleware";
 
 const router = Router();
 
-router.post("/",validateRequest(productController.createProductSchema),authenticate, productController.create);
+router.post("/",authenticate,validate(productController.createProductSchema), productController.create);
 router.get("/",  authenticate, productController.findAll);
 router.get("/:id",  authenticate, productController.findById);
-router.put("/:id", validateRequest(productController.updateProductSchema), authenticate, productController.update);
+router.put("/:id", authenticate,validate(productController.updateProductSchema), productController.update);
 router.delete("/:id", authenticate, productController.remove);
 export default router;
