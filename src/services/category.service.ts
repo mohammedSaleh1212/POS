@@ -10,7 +10,6 @@ export const createCategorySchema = z.object({
 
 });
 
-// Extract just the body payload type for your service
 export type CreateCategoryDTO = z.infer<typeof createCategorySchema>;
 
 export const createCategory = async (

@@ -1,6 +1,6 @@
 // src/controllers/category.controller.ts
 
-import { NextFunction, Request, Response } from "express";
+import { Request, Response } from "express";
 import * as categoryService from "../services/category.service";
 
 export const create = async (
