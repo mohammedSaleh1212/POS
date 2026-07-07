@@ -1,16 +1,36 @@
 import { productRepository } from "../repositories/product.repository";
 import { prisma } from "../db/prisma";
+import { CreateProductDTO, UpdateProductDTO } from "../controllers/product.controller";
 
-export const createProduct = async (data: any) => {
-  if (data.price !== undefined && data.price < 0) {
-    throw new Error("Price cannot be negative");
+export const createProduct = async (data: CreateProductDTO) => {
+  const existingSku = await prisma.product.findUnique({
+    where: { sku: data.sku }
+  });
+
+  if (existingSku) {
+    throw new Error("A product with this SKU already exists.");
   }
-
-  // Ensure stock is 0 on creation. Initial stock comes from a Purchase Invoice.
-  const safeData = { ...data, stockQuantity: 0 };
-  
-  return productRepository.create(safeData);
+  if (data.barcode) {
+    const existingBarcode = await prisma.product.findUnique({
+      where: { barcode: data.barcode }
+    });
+    
+    if (existingBarcode) {
+      throw new Error("Product with this barcode already exists.");
+    }
+  }
+  return productRepository.create({
+    name: data.name,
+    sku: data.sku,
+    barcode: data.barcode ?? null, 
+    price: data.price,
+    stockQuantity: 0,
+    category: {
+      connect: { id: data.categoryId }
+    }
+  });
 };
+
 
 export const getProducts = async () => {
   return productRepository.findAll();
@@ -26,25 +46,19 @@ export const getProductById = async (id: number) => {
   return product;
 };
 
-export const updateProduct = async (id: number, data: any) => {
-  const existing = await productRepository.findById(id);
+export const updateProduct = async (id: number, data: UpdateProductDTO) => {
+  const existing = await prisma.product.findUnique({ where: { id } });
+  if (!existing) throw new Error("Product not found");
 
-  if (!existing) {
-    throw new Error("Product not found");
-  }
+  // Filter out undefined keys
+  const updatePayload = Object.fromEntries(
+    Object.entries(data).filter(([_, value]) => value !== undefined)
+  );
 
-  if (data.price !== undefined && data.price < 0) {
-    throw new Error("Price cannot be negative");
-  }
-
-  // PREVENT MANUAL STOCK TAMPERING
-  const { stockQuantity, ...safeDataToUpdate } = data;
-
-  if (stockQuantity !== undefined) {
-      console.warn(`Attempted manual stock update on product ${id}. Ignored.`);
-  }
-
-  return productRepository.update(id, safeDataToUpdate);
+  return prisma.product.update({
+    where: { id },
+    data: updatePayload // Now this is clean and valid
+  });
 };
 
 export const deleteProduct = async (id: number) => {
@@ -64,4 +78,4 @@ export const deleteProduct = async (id: number) => {
   }
 
   return productRepository.delete(id);
-};
+}

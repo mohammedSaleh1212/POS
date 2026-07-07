@@ -2,9 +2,10 @@
 
 import { prisma } from "../db/prisma";
 import { Prisma } from "../generated/prisma";
+import { CreateCategoryDTO } from "../services/category.service";
 
 export const categoryRepository = {
-  create: async (data: Prisma.CategoryCreateInput) => {
+  create: async (data: CreateCategoryDTO) => {
     return prisma.category.create({
       data,
     });
@@ -22,7 +23,7 @@ export const categoryRepository = {
 
   update: async (
     id: number,
-    data: Prisma.CategoryUpdateInput
+    data: CreateCategoryDTO
   ) => {
     return prisma.category.update({
       where: { id },

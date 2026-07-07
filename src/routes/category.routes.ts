@@ -10,7 +10,7 @@ const router = Router();
 router.post("/",validateRequest(createCategorySchema), categoryController.create);
 router.get("/", categoryController.findAll);
 router.get("/:id", categoryController.findById);
-router.put("/:id", categoryController.update);
+router.put("/:id",validateRequest(createCategorySchema), categoryController.update);
 router.delete("/:id", categoryController.remove);
 
 export default router;

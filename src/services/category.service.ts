@@ -42,7 +42,7 @@ export const getCategoryById = async (id: number) => {
 
 export const updateCategory = async (
   id: number,
-  data: Prisma.CategoryUpdateInput
+  data: CreateCategoryDTO
 ) => {
   const category = await categoryRepository.findById(id);
 
