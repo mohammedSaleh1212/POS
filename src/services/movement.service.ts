@@ -2,12 +2,25 @@ import { prisma } from "../db/prisma";
 import { InvoiceType } from "../generated/prisma";
 
 export const openShift = async (userId: number, startingCash: number) => {
+  const activeShift = await prisma.dailyMovement.findFirst({
+    where: { 
+      userId, 
+      type: "SHIFT_START", 
+      status: "OPEN" 
+    }
+  });
+
+  if (activeShift) {
+    // This is the trigger for the 409 error in your global handler
+    throw new Error("Shift already open");
+  }
   return prisma.dailyMovement.create({
     data: {
       userId,
       type: "SHIFT_START",
       amount: startingCash,
       description: "Drawer opened",
+      status: "OPEN",
     },
   });
 };
@@ -70,6 +83,7 @@ export const closeShift = async (userId: number, actualEndingCash: number) => {
       type: "SHIFT_END",
       amount: actualEndingCash,
       description,
+      status: "CLOSED", 
     },
   });
 };

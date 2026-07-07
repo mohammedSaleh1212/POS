@@ -135,7 +135,7 @@ model DailyMovement {
   amount      Decimal  @db.Decimal(10, 2)
   description String?  // Reason for the movement
   createdAt   DateTime @default(now()) @map("created_at")
-
+  status      String
   user        User     @relation(fields: [userId], references: [id])
 
   @@map("daily_movements")
