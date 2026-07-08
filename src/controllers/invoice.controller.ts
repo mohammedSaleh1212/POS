@@ -63,7 +63,6 @@ export const create = async (req: Request, res: Response) => {
 
 };
 export const findAll = async (req: Request, res: Response) => {
-  try {
     // Basic filter to let a user see their own history, or an admin to see all.
     // We will hook this up to real role permissions later.
     const filterByUser = req.query.myInvoices === "true";
@@ -71,7 +70,5 @@ export const findAll = async (req: Request, res: Response) => {
 
     const invoices = await invoiceService.getInvoices(userId);
     res.json(invoices);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
+
 };
