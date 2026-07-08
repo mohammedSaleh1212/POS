@@ -1,5 +1,6 @@
 import { prisma } from "../db/prisma";
 import { InvoiceType } from "../generated/prisma";
+import { AppError } from "../middlewares/errorHandler";
 
 export const openShift = async (userId: number, startingCash: number) => {
   
@@ -13,7 +14,7 @@ export const openShift = async (userId: number, startingCash: number) => {
 
   if (activeShift) {
     // This is the trigger for the 409 error in your global handler
-    throw new Error("Shift already open");
+    throw new AppError(409, "Shift_already_open");
   }
   return prisma.dailyMovement.create({
     data: {
@@ -35,7 +36,7 @@ export const calculateExpectedCash = async (userId: number) => {
   });
 
   if (!lastMovement || lastMovement.type === "SHIFT_END") {
-    throw new Error("No active shift found. You must start a shift first.");
+    throw new AppError(400, "No_active_shift_found_You_must_start_a_shift_first.");
   }
 
   const startingCash = Number(lastMovement.amount);
