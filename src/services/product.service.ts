@@ -90,7 +90,7 @@ export const deleteProduct = async (id: number) => {
     });
 
     if (hasInvoices) {
-      throw new AppError(400, "Cannot_delete_product_associated_with_invoices");
+      throw new AppError(409, "Cannot_delete_product_associated_with_invoices");
     }
 
     return tx.product.delete({ where: { id } });
