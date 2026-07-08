@@ -2,31 +2,28 @@ import { Decimal } from "@prisma/client/runtime/wasm-compiler-edge";
 import { prisma } from "../db/prisma";
 import { InvoiceType } from "../generated/prisma";
 import { CreateInvoiceInput } from "../controllers/invoice.controller";
+import { AppError } from "../middlewares/errorHandler";
 
 
 
 export const createInvoice = async (data: CreateInvoiceInput, userId: number) => {
-  // if (!data.items || data.items.length === 0) {
-  //   throw new Error("Invoice must contain at least one item.");
-  // }
 
   return prisma.$transaction(async (tx) => {
-    // 1. Fetch all products at once to establish the source of truth
     const productIds = data.items.map(i => i.productId);
     const products = await tx.product.findMany({
       where: { id: { in: productIds } }
     });
 
     if (products.length !== data.items.length) {
-      throw new Error("One or more products not found in the database.");
+      throw new AppError(404, "One_or_more_products_not_found.");
     }
 
     // 2. Calculate totals with strict price enforcement
     let grandTotal = new Decimal(0);
-    
+
     const invoiceItems = data.items.map(item => {
       const product = products.find(p => p.id === item.productId);
-      if (!product) throw new Error(`Product ${item.productId} not found`);
+      if (!product) throw new AppError(404, `Product ${item.productId} not found`);
 
       let priceToUse: Decimal;
       const isSale = data.type === InvoiceType.SALE || data.type === InvoiceType.RETURN_PURCHASE;
@@ -36,8 +33,8 @@ export const createInvoice = async (data: CreateInvoiceInput, userId: number) =>
         priceToUse = product.price;
       } else {
         // ALLOW CLIENT PRICING: Trust the client for purchases, fallback to DB cost if missing
-        priceToUse = item.unitPrice !== undefined 
-          ? new Decimal(item.unitPrice) 
+        priceToUse = item.unitPrice !== undefined
+          ? new Decimal(item.unitPrice)
           : product.price;
       }
 
@@ -58,7 +55,7 @@ export const createInvoice = async (data: CreateInvoiceInput, userId: number) =>
         type: data.type,
         customerId: data.customerId || null,
         userId: userId,
-        totalAmount: grandTotal, 
+        totalAmount: grandTotal,
         paymentMethod: data.paymentMethod,
         items: {
           create: invoiceItems,
@@ -73,15 +70,24 @@ export const createInvoice = async (data: CreateInvoiceInput, userId: number) =>
       let stockChange = 0;
 
       if (data.type === InvoiceType.PURCHASE || data.type === InvoiceType.RETURN_SALE) {
-        stockChange = item.quantity; 
+        stockChange = item.quantity;
       } else if (data.type === InvoiceType.SALE || data.type === InvoiceType.RETURN_PURCHASE) {
-        stockChange = -item.quantity; 
-        
+        stockChange = -item.quantity;
+
         if (product.stockQuantity + stockChange < 0) {
-          throw new Error(`Insufficient stock for product: ${product.name}. Current stock: ${product.stockQuantity}`);
+          throw new AppError(
+            400,
+            "Insufficient_stock",
+            {
+              productId: product.id,
+              productName: product.name,
+              availableStock: product.stockQuantity,
+              requestedQuantity: item.quantity
+            }
+          );
         }
       } else {
-        throw new Error("Invalid invoice type.");
+        throw new AppError(400, "Invalid_invoice_type.");
       }
 
       // Update the inventory count. 
