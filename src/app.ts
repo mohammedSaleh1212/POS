@@ -5,6 +5,7 @@ import categoriesRoutes from './routes/category.routes';
 import invoiceRoutes from './routes/invoice.routes';
 import movementRoutes from './routes/movement.routes';
 import { errorHandler } from './middlewares/errorHandler';
+import authRoutes from './routes/auth.routes';
 
 const app = express();
 
@@ -14,6 +15,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/categories', categoriesRoutes);
 app.use("/api/invoices", invoiceRoutes);
 app.use("/api/movements", movementRoutes);
+app.use("/api/auth", authRoutes);
 app.use(errorHandler);
 
 

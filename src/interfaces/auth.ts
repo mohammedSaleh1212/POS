@@ -1,6 +1,5 @@
 // src/types/auth.ts
-
-export interface JWTPayload {
+export interface AccessTokenPayload {
   userId: number;
   email: string;
   role: {
@@ -10,11 +9,14 @@ export interface JWTPayload {
   };
 }
 
-// Extend Express Request interface to hold user data
+export interface RefreshTokenPayload {
+  userId: number;
+}
+
 declare global {
   namespace Express {
     interface Request {
-      user?: JWTPayload;
+      user?: AccessTokenPayload;
     }
   }
 }
