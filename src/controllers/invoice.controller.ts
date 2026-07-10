@@ -37,10 +37,10 @@ export const CreateInvoiceSchema = z.object({
 
   paymentMethod: PaymentMethodEnum,
 
-  customerId: z
+  contactId: z
     .number()
     .int()
-    .positive("Invalid_customer_ID")
+    .positive("Invalid_contact_ID")
     .optional(),
 
   items: z
