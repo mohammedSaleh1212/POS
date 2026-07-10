@@ -22,7 +22,7 @@ export const createInvoice = async (
       InvoiceType.RETURN_PURCHASE,
     ]);
 
-    const outgoingInvoiceTypes = new Set<InvoiceType>([
+    const stockDecreaseInvoiceTypes = new Set<InvoiceType>([
       InvoiceType.SALE,
       InvoiceType.RETURN_PURCHASE,
     ]);
@@ -115,7 +115,7 @@ export const createInvoice = async (
     // 3. Build Invoice Items
     // =====================================================
 
-    let grandTotal = new Decimal(0);
+    let subtotalAmount = new Decimal(0);
 
 
     const invoiceItems = data.items.map(item => {
@@ -133,7 +133,7 @@ export const createInvoice = async (
       }
 
 
-      const unitPrice = outgoingInvoiceTypes.has(data.type)
+      const unitPrice = stockDecreaseInvoiceTypes.has(data.type)
         ? product.price
         : item.unitPrice !== undefined
           ? new Decimal(item.unitPrice)
@@ -145,7 +145,7 @@ export const createInvoice = async (
       );
 
 
-      grandTotal = grandTotal.plus(lineTotal);
+      subtotalAmount = subtotalAmount.plus(lineTotal);
 
 
       return {
@@ -155,6 +155,73 @@ export const createInvoice = async (
         lineTotal,
       };
     });
+ // =====================================================
+    // 4. Calculate Discount
+    // =====================================================
+
+    let discountAmount = new Decimal(0);
+
+
+    if (
+      data.discountType &&
+      data.discountValue !== undefined
+    ) {
+
+      const discountValue = new Decimal(
+        data.discountValue
+      );
+
+
+      if (data.discountType === "FIXED") {
+
+        discountAmount = discountValue;
+
+      }
+
+
+      if (data.discountType === "PERCENTAGE") {
+
+        discountAmount = subtotalAmount
+          .mul(discountValue)
+          .div(100);
+
+      }
+    }
+
+
+    if (
+      discountAmount.greaterThan(subtotalAmount)
+    ) {
+      throw new AppError(
+        400,
+        "Discount_cannot_exceed_subtotal"
+      );
+    }
+
+
+
+    // =====================================================
+    // 5. Calculate Tax
+    // =====================================================
+
+    // Later this will come from GeneralSetting and also we should include tax_inclusive
+    const taxRate = new Decimal(0);
+
+    const taxAmount = subtotalAmount
+      .minus(discountAmount)
+      .mul(taxRate)
+      .div(100);
+
+
+
+    // =====================================================
+    // 6. Calculate Total
+    // =====================================================
+
+    const totalAmount = subtotalAmount
+      .minus(discountAmount)
+      .plus(taxAmount);
+
 
 
 
@@ -162,7 +229,7 @@ export const createInvoice = async (
     // 4. Validate Stock
     // =====================================================
 
-    if (outgoingInvoiceTypes.has(data.type)) {
+    if (stockDecreaseInvoiceTypes.has(data.type)) {
 
       for (const item of data.items) {
 
@@ -196,16 +263,44 @@ export const createInvoice = async (
     const invoice = await tx.invoice.create({
 
       data: {
+
         type: data.type,
+
         contactId: data.contactId ?? null,
+
         userId,
-        totalAmount: grandTotal,
-        paymentMethod: data.paymentMethod,
+
+
+        subtotalAmount,
+
+        discountType:
+          data.discountType ?? null,
+
+        discountValue:
+          data.discountValue !== undefined
+            ? new Decimal(data.discountValue)
+            : null,
+
+        discountAmount,
+
+
+        taxRate,
+
+        taxAmount,
+
+
+        totalAmount,
+
+
+        paymentMethod:
+          data.paymentMethod,
+
 
         items: {
           create: invoiceItems,
         },
       },
+
 
       include: {
         items: true,
@@ -214,14 +309,13 @@ export const createInvoice = async (
     });
 
 
-
     // =====================================================
     // 6. Update Inventory
     // =====================================================
 
     for (const item of data.items) {
 
-      const stockChange = outgoingInvoiceTypes.has(data.type)
+      const stockChange = stockDecreaseInvoiceTypes.has(data.type)
         ? -item.quantity
         : item.quantity;
 

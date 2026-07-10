@@ -1,7 +1,12 @@
 import { Request, Response } from "express";
 import * as invoiceService from "../services/invoice.service";
 import { z } from 'zod';
-
+export const DiscountTypeEnum = z.enum(
+  ["FIXED", "PERCENTAGE"],
+  {
+    message: "Invalid_discount_type",
+  }
+);
 export const InvoiceTypeEnum = z.enum(
   ["PURCHASE", "SALE", "RETURN_PURCHASE", "RETURN_SALE"],
   {
@@ -41,6 +46,13 @@ export const CreateInvoiceSchema = z.object({
     .number()
     .int()
     .positive("Invalid_contact_ID")
+    .optional(),
+
+  discountType: DiscountTypeEnum.optional(),
+
+  discountValue: z
+    .number()
+    .nonnegative("Discount_cannot_be_negative")
     .optional(),
 
   items: z
