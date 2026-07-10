@@ -10,11 +10,6 @@ export const loginSchema = z.object({
     .min(6, 'Password_too_short'),
 });
 
-export const refreshSchema = z.object({
-  refresh_token: z
-    .string()
-    .min(1, 'Refresh_token_missing'),
-});
+
 
 export type LoginInput = z.infer<typeof loginSchema>;
-export type RefreshInput = z.infer<typeof refreshSchema>;

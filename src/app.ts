@@ -6,9 +6,10 @@ import invoiceRoutes from './routes/invoice.routes';
 import movementRoutes from './routes/movement.routes';
 import { errorHandler } from './middlewares/errorHandler';
 import authRoutes from './routes/auth.routes';
+import cookieParser from 'cookie-parser';
 
 const app = express();
-
+app.use(cookieParser());
 app.use(cors());
 app.use(express.json());
 app.use('/api/products', productRoutes);
