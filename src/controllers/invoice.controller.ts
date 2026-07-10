@@ -54,6 +54,11 @@ export const CreateInvoiceSchema = z.object({
     .number()
     .nonnegative("Discount_cannot_be_negative")
     .optional(),
+    originalInvoiceId: z
+  .number()
+  .int()
+  .positive("Invalid_original_invoice_ID")
+  .optional(),
 
   items: z
     .array(InvoiceItemSchema)

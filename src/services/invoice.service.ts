@@ -26,6 +26,10 @@ export const createInvoice = async (
       InvoiceType.SALE,
       InvoiceType.RETURN_PURCHASE,
     ]);
+    const returnInvoiceTypes = new Set<InvoiceType>([
+      InvoiceType.RETURN_SALE,
+      InvoiceType.RETURN_PURCHASE,
+    ]);
 
 
     // =====================================================
@@ -81,11 +85,64 @@ export const createInvoice = async (
         "Supplier_is_required"
       );
     }
+    // =====================================================
+    // 2. Validate Original Invoice For Returns
+    // =====================================================
+
+    if (returnInvoiceTypes.has(data.type)) {
+
+      if (!data.originalInvoiceId) {
+        throw new AppError(
+          400,
+          "Original_invoice_is_required_for_return"
+        );
+      }
 
 
+      const originalInvoice = await tx.invoice.findUnique({
+        where: {
+          id: data.originalInvoiceId,
+        },
+        include: {
+          items: true,
+        },
+      });
+
+
+      if (!originalInvoice) {
+        throw new AppError(
+          404,
+          "Original_invoice_not_found"
+        );
+      }
+
+
+      if (data.type === InvoiceType.RETURN_SALE) {
+
+        if (originalInvoice.type !== InvoiceType.SALE) {
+          throw new AppError(
+            400,
+            "Return_sale_must_reference_sale_invoice"
+          );
+        }
+
+      }
+
+
+      if (data.type === InvoiceType.RETURN_PURCHASE) {
+
+        if (originalInvoice.type !== InvoiceType.PURCHASE) {
+          throw new AppError(
+            400,
+            "Return_purchase_must_reference_purchase_invoice"
+          );
+        }
+
+      }
+    }
 
     // =====================================================
-    // 2. Load Products
+    // 3. Load Products
     // =====================================================
 
     const productIds = data.items.map(
@@ -155,7 +212,7 @@ export const createInvoice = async (
         lineTotal,
       };
     });
- // =====================================================
+    // =====================================================
     // 4. Calculate Discount
     // =====================================================
 
@@ -265,7 +322,8 @@ export const createInvoice = async (
       data: {
 
         type: data.type,
-
+        originalInvoiceId:
+          data.originalInvoiceId ?? null,
         contactId: data.contactId ?? null,
 
         userId,

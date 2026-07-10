@@ -7,6 +7,7 @@ import movementRoutes from './routes/movement.routes';
 import { errorHandler } from './middlewares/errorHandler';
 import authRoutes from './routes/auth.routes';
 import cookieParser from 'cookie-parser';
+import settingsRoutes from './routes/settings.routes';
 
 const app = express();
 app.use(cookieParser());
@@ -17,6 +18,7 @@ app.use('/api/categories', categoriesRoutes);
 app.use("/api/invoices", invoiceRoutes);
 app.use("/api/movements", movementRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/settings", settingsRoutes);
 app.use(errorHandler);
 
 
