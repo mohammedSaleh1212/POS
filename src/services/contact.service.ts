@@ -1,11 +1,14 @@
 import { prisma } from "../db/prisma";
+import { Prisma } from "../generated/prisma";
 import { AppError } from "../middlewares/errorHandler";
 
 export const getContactById = async (
-  id: number
+  id: number,
+db: Prisma.TransactionClient | typeof prisma = prisma
+
 ) => {
   const contact =
-    await prisma.contact.findUnique({ where: { id }});
+    await db.contact.findUnique({ where: { id }});
 
   if (!contact)
     throw new AppError(

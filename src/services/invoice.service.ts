@@ -4,8 +4,64 @@ import { InvoiceType, InvoiceStatus, Prisma } from "../generated/prisma";
 import { CreateInvoiceInput, InvoiceQueryParams } from "../controllers/invoice.controller";
 import { AppError } from "../middlewares/errorHandler";
 import { getSettings } from "./settings.service";
+import * as contactService from "./contact.service";
 
+async function validateInvoiceContact(
+  tx: Prisma.TransactionClient,
+  data: CreateInvoiceInput
+) {
+  const customerInvoiceTypes = new Set<InvoiceType>([
+    "SALE",
+    "RETURN_SALE",
+  ]);
 
+  const supplierInvoiceTypes = new Set<InvoiceType>([
+    "PURCHASE",
+    "RETURN_PURCHASE",
+  ]);
+
+  if (
+    supplierInvoiceTypes.has(data.type) &&
+    !data.contactId
+  ) {
+    throw new AppError(
+      400,
+      "Supplier_is_required"
+    );
+  }
+
+  if (!data.contactId) {
+    return null;
+  }
+
+  const contact =
+    await contactService.getContactById(
+      data.contactId,
+      tx
+    );
+
+  if (
+    customerInvoiceTypes.has(data.type) &&
+    !contact.isCustomer
+  ) {
+    throw new AppError(
+      400,
+      "Selected_contact_is_not_a_customer"
+    );
+  }
+
+  if (
+    supplierInvoiceTypes.has(data.type) &&
+    !contact.isSupplier
+  ) {
+    throw new AppError(
+      400,
+      "Selected_contact_is_not_a_supplier"
+    );
+  }
+
+  return contact;
+}
 
 export const createInvoice = async (data: CreateInvoiceInput, userId: number) => {
   return prisma.$transaction(async (tx) => {
