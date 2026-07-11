@@ -1,6 +1,7 @@
 import { prisma } from "../db/prisma";
 import { CreateProductDTO, UpdateProductDTO } from "../controllers/product.controller";
 import { AppError } from "../middlewares/errorHandler";
+import { Prisma, PrismaClient } from "../generated/prisma";
 
 export const createProduct = async (data: CreateProductDTO) => {
   // 1. جلب البيانات للتحقق منها شرطياً فقط إذا تم تمريرها
@@ -71,6 +72,26 @@ export const getProductById = async (id: number) => {
   }
 
   return product;
+};
+export const getProductsByIds = async (
+  ids: number[],
+  tx: Prisma.TransactionClient | PrismaClient = prisma
+) => {
+  const products = await tx.product.findMany({
+    where: { 
+      id: { in: ids } 
+    },
+    include: {
+      category: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+  });
+
+  return products;
 };
 
 export const updateProduct = async (id: number, data: UpdateProductDTO) => {
