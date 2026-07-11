@@ -81,7 +81,7 @@ model Product {
   sku           String?  @unique
   barcode       String?  @unique
   costPrice     Decimal  @db.Decimal(10, 2) @map("cost_price") 
-  sellingPrice  Decimal  @db.Decimal(10, 2) @map("selling_price")
+  sellingPrice  Decimal?  @db.Decimal(10, 2) @map("selling_price")
   stockQuantity Int      @default(0) @map("stock_quantity")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")

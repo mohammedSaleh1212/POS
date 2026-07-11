@@ -27,16 +27,14 @@ export const createProduct = async (data: CreateProductDTO) => {
     throw new AppError(409, "Product_with_this_barcode_already_exists");
   }
 
-  // 3. إنشاء المنتج بالبيانات الصحيحة
   return prisma.product.create({
     data: {
       name: data.name,
       sku: data.sku ?? null,
       barcode: data.barcode ?? null,
       costPrice: data.costPrice,
-      sellingPrice: data.sellingPrice,
-      // استخدم الكمية الممررة أو القيمة الافتراضية 0
-      stockQuantity: data.stockQuantity ?? 0, 
+      sellingPrice: data.sellingPrice ?? null,
+      stockQuantity: 0, 
       categoryId: data.categoryId ?? null,
     },
   });

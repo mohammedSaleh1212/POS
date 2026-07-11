@@ -21,7 +21,7 @@ export const createInvoice = async (data: CreateInvoiceInput, userId: number) =>
     if (data.contactId) {
       const contact = await tx.contact.findUnique({ where: { id: data.contactId } });
       if (!contact) throw new AppError(404, "Contact_not_found");
-      
+
       if (customerInvoiceTypes.has(data.type) && !contact.isCustomer) {
         throw new AppError(400, "Selected_contact_is_not_a_customer");
       }
@@ -65,10 +65,21 @@ export const createInvoice = async (data: CreateInvoiceInput, userId: number) =>
       const product = products.find((p) => p.id === item.productId)!;
       let unitPrice = new Decimal(0);
       let costPrice = new Decimal(product.costPrice);
-
-      // منطق التسعير بناءً على نوع الفاتورة
       if (data.type === "SALE") {
-        unitPrice = item.unitPrice !== undefined ? new Decimal(item.unitPrice) : new Decimal(product.sellingPrice);
+        if (item.unitPrice !== undefined) {
+          unitPrice = new Decimal(item.unitPrice);
+        } else if (product.sellingPrice !== null) {
+          unitPrice = new Decimal(product.sellingPrice);
+        } else {
+          throw new AppError(
+            400,
+            "Selling_price_required_for_product",
+            {
+              productId: product.id,
+              productName: product.name,
+            }
+          );
+        }
       } else if (data.type === "PURCHASE") {
         unitPrice = item.unitPrice !== undefined ? new Decimal(item.unitPrice) : new Decimal(product.costPrice);
         costPrice = unitPrice; // في فاتورة الشراء، سعر الوحدة هو التكلفة الفعلية
@@ -77,7 +88,7 @@ export const createInvoice = async (data: CreateInvoiceInput, userId: number) =>
         const originalItem = originalInvoice.items.find((i: any) => i.productId === item.productId);
         if (!originalItem) throw new AppError(400, `Product ${product.name} not found in original invoice`);
         if (item.quantity > originalItem.quantity) throw new AppError(400, `Return quantity exceeds original for ${product.name}`);
-        
+
         unitPrice = new Decimal(originalItem.unitPrice);
         costPrice = new Decimal(originalItem.costPrice);
       }
@@ -118,7 +129,7 @@ export const createInvoice = async (data: CreateInvoiceInput, userId: number) =>
 
     if (settings.taxEnabled) {
       taxRate = new Decimal(settings.taxRate);
-      
+
       if (settings.taxInclusive) {
         // إذا كان السعر شاملاً للضريبة: نستخرج قيمة الضريبة من الإجمالي لتسجيلها فقط
         // المعادلة: Tax = Total - (Total / (1 + Rate))
@@ -135,7 +146,7 @@ export const createInvoice = async (data: CreateInvoiceInput, userId: number) =>
 
     // 8. حساب حالة الدفع (Payment Status)
     const paidAmount = new Decimal(data.paidAmount ?? 0);
-let status: InvoiceStatus = InvoiceStatus.UNPAID;    
+    let status: InvoiceStatus = InvoiceStatus.UNPAID;
     if (paidAmount.greaterThanOrEqualTo(totalAmount)) {
       status = InvoiceStatus.PAID;
     } else if (paidAmount.greaterThan(0)) {
@@ -184,14 +195,14 @@ let status: InvoiceStatus = InvoiceStatus.UNPAID;
     // 11. تحديث المخزون وسعر التكلفة (للمشتريات)
     for (const item of invoiceItems) {
       const stockChange = stockDecreaseInvoiceTypes.has(data.type) ? -item.quantity : item.quantity;
-      
+
       const updateData: any = {
         stockQuantity: { increment: stockChange },
       };
 
       // تحديث سعر تكلفة المنتج في حال كانت الفاتورة فاتورة شراء
       if (data.type === "PURCHASE") {
-        updateData.costPrice = item.unitPrice; 
+        updateData.costPrice = item.unitPrice;
       }
 
       await tx.product.update({
@@ -609,7 +620,7 @@ export const getInvoices = async (params: GetInvoicesParams) => {
   if (status) where.status = status;
   if (type) where.type = type;
   if (contactId) where.contactId = contactId;
-  
+
   // فلترة حسب التاريخ إذا توفرت القيم
   if (startDate || endDate) {
     where.createdAt = {};

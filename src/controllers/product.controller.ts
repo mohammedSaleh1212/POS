@@ -15,9 +15,9 @@ export const createProductSchema = z.object({
   
   costPrice: z.coerce.number().nonnegative("Cost_price_must_be_positive_or_zero"),
   
-  sellingPrice: z.coerce.number().positive("Selling_price_must_be_greater_than_zero"),
+  sellingPrice: z.coerce.number().positive("Selling_price_must_be_greater_than_zero").optional(),
   
-  stockQuantity: z.number().int().nonnegative("Stock_cannot_be_negative").optional().default(0),
+  // stockQuantity: z.number().int().nonnegative("Stock_cannot_be_negative").optional().default(0),
   
   categoryId: z.number().int().positive("Invalid_category_ID").optional().nullable()
 });
@@ -33,7 +33,7 @@ export const updateProductSchema = z.object({
   
   sellingPrice: z.coerce.number().positive("Selling_price_must_be_greater_than_zero").optional(),
   
-  stockQuantity: z.number().int().nonnegative("Stock_cannot_be_negative").optional(),
+  // stockQuantity: z.number().int().nonnegative("Stock_cannot_be_negative").optional(),
   
   categoryId: z.number().int().positive("Invalid_category_ID").optional().nullable()
 });
