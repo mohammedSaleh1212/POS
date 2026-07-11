@@ -1,7 +1,7 @@
 import { Decimal } from "@prisma/client/runtime/wasm-compiler-edge";
 import { prisma } from "../db/prisma";
-import { InvoiceType, InvoiceStatus } from "../generated/prisma";
-import { CreateInvoiceInput } from "../controllers/invoice.controller";
+import { InvoiceType, InvoiceStatus, Prisma } from "../generated/prisma";
+import { CreateInvoiceInput, InvoiceQueryParams } from "../controllers/invoice.controller";
 import { AppError } from "../middlewares/errorHandler";
 import { getSettings } from "./settings.service";
 
@@ -595,29 +595,60 @@ let status: InvoiceStatus = InvoiceStatus.UNPAID;
 //     return invoice;
 //   });
 // };
-export const getInvoices = async (userId?: number) => {
-  // If a userId is passed, we fetch only their invoices (e.g., for a cashier's history).
-  // If omitted, we fetch all (e.g., for an admin dashboard).
-  const whereClause = userId ? { userId } : {};
+interface GetInvoicesParams extends InvoiceQueryParams {
+  userId?: number;
+}
 
-  return prisma.invoice.findMany({
-    where: whereClause,
-    orderBy: { createdAt: "desc" },
-    include: {
-      items: {
-        include: {
-          product: {
-            select: { name: true, sku: true } // Fetch product names for the receipt
-          }
-        }
+export const getInvoices = async (params: GetInvoicesParams) => {
+  const { page, limit, status, type, contactId, userId, startDate, endDate } = params;
+
+  // 1. بناء الـ Where Clause بشكل ديناميكي
+  const where: Prisma.InvoiceWhereInput = {};
+
+  if (userId) where.userId = userId;
+  if (status) where.status = status;
+  if (type) where.type = type;
+  if (contactId) where.contactId = contactId;
+  
+  // فلترة حسب التاريخ إذا توفرت القيم
+  if (startDate || endDate) {
+    where.createdAt = {};
+    if (startDate) where.createdAt.gte = startDate;
+    if (endDate) where.createdAt.lte = endDate;
+  }
+
+  // 2. حساب معادلة الـ Pagination
+  const skip = (page - 1) * limit;
+
+  // 3. جلب العدد الإجمالي والبيانات معاً عبر Transaction
+  const [totalItems, invoices] = await prisma.$transaction([
+    prisma.invoice.count({ where }),
+    prisma.invoice.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: { createdAt: "desc" },
+      include: {
+        items: {
+          include: {
+            product: { select: { name: true, sku: true } },
+          },
+        },
+        user: { select: { fullName: true } },
+        contact: { select: { fullName: true, phoneNumber: true } },
       },
-      user: {
-        select: { fullName: true } // Know who made the sale
-      },
-      contact: {
-        select: { fullName: true, phoneNumber: true }
-      }
+    }),
+  ]);
+
+  // 4. إرجاع النتيجة بهيكل جاهز للـ Frontend
+  return {
+    meta: {
+      totalItems,
+      itemCount: invoices.length,
+      itemsPerPage: limit,
+      totalPages: Math.ceil(totalItems / limit),
+      currentPage: page,
     },
-    take: 100 // Prevent massive payload crashes. Implement real pagination later.
-  });
+    data: invoices,
+  };
 };

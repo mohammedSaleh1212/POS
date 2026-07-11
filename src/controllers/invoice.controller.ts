@@ -36,7 +36,20 @@ export const InvoiceItemSchema = z.object({
     .nonnegative("Unit_price_cannot_be_negative")
     .optional(),
 });
+import { InvoiceStatus, InvoiceType } from "../generated/prisma"; // تأكد من أسماء الـ Enums لديك
 
+export const InvoiceQuerySchema = z.object({
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(20),
+  status: z.nativeEnum(InvoiceStatus).optional(),
+  type: z.nativeEnum(InvoiceType).optional(), // استبدلها باسم الـ Enum الصحيح في مشروعك
+  contactId: z.coerce.number().positive().optional(),
+  myInvoices: z.enum(["true", "false"]).optional(),
+  startDate: z.coerce.date().optional(),
+  endDate: z.coerce.date().optional(),
+});
+
+export type InvoiceQueryParams = z.infer<typeof InvoiceQuerySchema>;
 export const CreateInvoiceSchema = z.object({
   type: InvoiceTypeEnum,
 
@@ -59,7 +72,7 @@ export const CreateInvoiceSchema = z.object({
   .int()
   .positive("Invalid_original_invoice_ID")
   .optional(),
-  
+
 paidAmount: z
     .number()
     .nonnegative("Paid_amount_cannot_be_negative")
@@ -86,10 +99,12 @@ export const create = async (req: Request, res: Response) => {
 export const findAll = async (req: Request, res: Response) => {
     // Basic filter to let a user see their own history, or an admin to see all.
     // We will hook this up to real role permissions later.
-    const filterByUser = req.query.myInvoices === "true";
-    const userId = filterByUser ? (req as any).user.id : undefined;
+    const query = InvoiceQuerySchema.parse(req.query);
+const filterUserId = query.myInvoices === "true" ? (req as any).user.id : undefined;
 
-    const invoices = await invoiceService.getInvoices(userId);
-    res.json(invoices);
+const result = await invoiceService.getInvoices({
+    ...query,
+    userId: filterUserId,
+  });    res.json(result);
 
 };
