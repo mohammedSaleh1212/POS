@@ -80,7 +80,7 @@ model Product {
   name          String
   sku           String?  @unique
   barcode       String?  @unique
-costPrice     Decimal  @db.Decimal(10, 2) @map("cost_price") 
+  costPrice     Decimal  @db.Decimal(10, 2) @map("cost_price") 
   sellingPrice  Decimal  @db.Decimal(10, 2) @map("selling_price")
   stockQuantity Int      @default(0) @map("stock_quantity")
   createdAt     DateTime @default(now()) @map("created_at")
@@ -129,7 +129,7 @@ model Invoice {
   taxRate   Decimal? @db.Decimal(5,2)
 
   totalAmount Decimal @db.Decimal(10,2)
-
+  paidAmount        Decimal       @default(0) @db.Decimal(10,2) @map("paid_amount")
   paymentMethod String   @map("payment_method")
   createdAt     DateTime @default(now()) @map("created_at")
 

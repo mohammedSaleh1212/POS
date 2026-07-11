@@ -3,26 +3,41 @@ import { CreateProductDTO, UpdateProductDTO } from "../controllers/product.contr
 import { AppError } from "../middlewares/errorHandler";
 
 export const createProduct = async (data: CreateProductDTO) => {
+  // 1. جلب البيانات للتحقق منها شرطياً فقط إذا تم تمريرها
   const [existingCategory, existingSku, existingBarcode] = await Promise.all([
-    prisma.category.findUnique({ where: { id: data.categoryId } }),
-    prisma.product.findUnique({ where: { sku: data.sku } }),
+    data.categoryId 
+      ? prisma.category.findUnique({ where: { id: data.categoryId } }) 
+      : null,
+    data.sku 
+      ? prisma.product.findUnique({ where: { sku: data.sku } }) 
+      : null,
     data.barcode 
       ? prisma.product.findUnique({ where: { barcode: data.barcode } }) 
       : null,
   ]);
 
-  if (!existingCategory) throw new AppError(404, "Category_not_found");
-  if (existingSku) throw new AppError(409, "Product_with_this_SKU_already_exists");
-  if (existingBarcode) throw new AppError(409, "Product_with_this_barcode_already_exists");
+  // 2. التحقق من وجود الأخطاء
+  if (data.categoryId && !existingCategory) {
+    throw new AppError(404, "Category_not_found");
+  }
+  if (existingSku) {
+    throw new AppError(409, "Product_with_this_SKU_already_exists");
+  }
+  if (existingBarcode) {
+    throw new AppError(409, "Product_with_this_barcode_already_exists");
+  }
 
+  // 3. إنشاء المنتج بالبيانات الصحيحة
   return prisma.product.create({
     data: {
       name: data.name,
-      sku: data.sku,
+      sku: data.sku ?? null,
       barcode: data.barcode ?? null,
-      price: data.price,
-      stockQuantity: 0,
-      categoryId: data.categoryId, // Cleaner if using foreign key IDs directly
+      costPrice: data.costPrice,
+      sellingPrice: data.sellingPrice,
+      // استخدم الكمية الممررة أو القيمة الافتراضية 0
+      stockQuantity: data.stockQuantity ?? 0, 
+      categoryId: data.categoryId ?? null,
     },
   });
 };

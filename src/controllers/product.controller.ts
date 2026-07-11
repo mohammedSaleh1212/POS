@@ -5,20 +5,40 @@ import * as productService from "../services/product.service";
 
 import { z } from 'zod';
 
+
 export const createProductSchema = z.object({
-    name: z.string().min(2, "Product_name_required"),
-    sku: z.string().min(3, "SKU_required"),
-    barcode: z.string().length(13, "Barcode_must_be_exactly_13_characters").nullable().optional(),
-    price: z.coerce.number().positive("Price_must_be_greater_than_zero"),
-    stockQuantity: z.number().int().nonnegative("Stock_cannot_be_negative"),
-    categoryId: z.number().int().positive("Invalid_category_ID")
+  name: z.string().min(2, "Product_name_required"),
+  
+  sku: z.string().min(3, "SKU_required").optional().nullable(),
+  
+  barcode: z.string().length(13, "Barcode_must_be_exactly_13_characters").optional().nullable(),
+  
+  costPrice: z.coerce.number().nonnegative("Cost_price_must_be_positive_or_zero"),
+  
+  sellingPrice: z.coerce.number().positive("Selling_price_must_be_greater_than_zero"),
+  
+  stockQuantity: z.number().int().nonnegative("Stock_cannot_be_negative").optional().default(0),
+  
+  categoryId: z.number().int().positive("Invalid_category_ID").optional().nullable()
 });
-// product.schema.ts
+
 export const updateProductSchema = z.object({
   name: z.string().min(2, "Product_name_must_be_at_least_2_characters").optional(),
-  sku: z.string().min(3, "SKU_must_be_at_least_3_characters").optional(),
-  price: z.coerce.number().positive("Price_must_be_greater_than_zero").optional(),
+  
+  sku: z.string().min(3, "SKU_must_be_at_least_3_characters").optional().nullable(),
+  
+  barcode: z.string().length(13, "Barcode_must_be_exactly_13_characters").optional().nullable(),
+  
+  costPrice: z.coerce.number().nonnegative("Cost_price_must_be_positive_or_zero").optional(),
+  
+  sellingPrice: z.coerce.number().positive("Selling_price_must_be_greater_than_zero").optional(),
+  
+  stockQuantity: z.number().int().nonnegative("Stock_cannot_be_negative").optional(),
+  
+  categoryId: z.number().int().positive("Invalid_category_ID").optional().nullable()
 });
+
+
 
 export type UpdateProductDTO = z.infer<typeof updateProductSchema>;
 export type CreateProductDTO = z.infer<typeof createProductSchema>;

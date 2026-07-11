@@ -59,7 +59,11 @@ export const CreateInvoiceSchema = z.object({
   .int()
   .positive("Invalid_original_invoice_ID")
   .optional(),
-
+  
+paidAmount: z
+    .number()
+    .nonnegative("Paid_amount_cannot_be_negative")
+    .default(0),
   items: z
     .array(InvoiceItemSchema)
     .min(1, "Invoice_must_contain_at_least_one_item"),
