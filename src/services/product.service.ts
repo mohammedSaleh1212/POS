@@ -95,17 +95,46 @@ export const getProductsByIds = async (
 };
 
 export const updateProduct = async (id: number, data: UpdateProductDTO) => {
-  const existing = await prisma.product.findUnique({ where: { id } });
-  if (!existing) throw new AppError(404, "Product_not_found");
+  // 1. Fetch current product and validate conditional constraints in parallel
+  const [currentProduct, existingCategory, duplicateSku, duplicateBarcode] = await Promise.all([
+    prisma.product.findUnique({ where: { id } }),
+    
+    data.categoryId 
+      ? prisma.category.findUnique({ where: { id: data.categoryId } }) 
+      : null,
+      
+    data.sku 
+      ? prisma.product.findFirst({ where: { sku: data.sku, id: { not: id } } }) 
+      : null,
+      
+    data.barcode 
+      ? prisma.product.findFirst({ where: { barcode: data.barcode, id: { not: id } } }) 
+      : null,
+  ]);
 
-  // Filter out undefined keys
+  // 2. Business Logic Validations
+  if (!currentProduct) {
+    throw new AppError(404, "Product_not_found");
+  }
+  if (data.categoryId && !existingCategory) {
+    throw new AppError(404, "Category_not_found");
+  }
+  if (duplicateSku) {
+    throw new AppError(409, "Product_with_this_SKU_already_exists");
+  }
+  if (duplicateBarcode) {
+    throw new AppError(409, "Product_with_this_barcode_already_exists");
+  }
+
+  // 3. Filter out undefined keys to prevent updating unprovided fields
   const updatePayload = Object.fromEntries(
     Object.entries(data).filter(([_, value]) => value !== undefined)
   );
 
+  // 4. Persist database update
   return prisma.product.update({
     where: { id },
-    data: updatePayload // Now this is clean and valid
+    data: updatePayload,
   });
 };
 

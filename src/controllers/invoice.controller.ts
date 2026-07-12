@@ -72,7 +72,7 @@ export const CreateInvoiceSchema = z.object({
   .int()
   .positive("Invalid_original_invoice_ID")
   .optional(),
-
+ 
 paidAmount: z
     .number()
     .nonnegative("Paid_amount_cannot_be_negative")
@@ -94,6 +94,40 @@ export const create = async (req: Request, res: Response) => {
     
     const invoice = await invoiceService.createInvoice(req.body, userId);
     res.status(201).json(invoice);
+
+};
+
+
+
+// const paymentMethodEnum = z.enum(["CASH", "CARD", "BANK_TRANSFER"]);
+// const discountTypeEnum = z.enum(["PERCENTAGE", "FIXED"]);
+
+export const previewInvoiceSchema = z.object({
+  type: InvoiceTypeEnum,
+  paymentMethod: PaymentMethodEnum.optional().default("CASH"),
+  
+  // Structural types match the creation schema exactly
+  contactId: z.coerce.number().int().positive("Invalid_contact_ID").optional(),
+  discountType: DiscountTypeEnum.optional().nullable(),
+  discountValue: z.coerce.number().nonnegative("Discount_value_cannot_be_negative").optional().nullable(),
+  originalInvoiceId: z.coerce.number().int().positive("Invalid_original_invoice_ID").optional(),
+  
+  paidAmount: z.coerce.number().nonnegative("Paid_amount_cannot_be_negative").optional().default(0),
+  
+  // Relaxed rule: Empty array allowed on live preview typing
+  items: z.array(InvoiceItemSchema).default([])
+});
+
+export type PreviewInvoiceInput = z.infer<typeof previewInvoiceSchema>;
+export const previewInvoiceController = async (
+  req: Request<{}, {}, PreviewInvoiceInput>,
+  res: Response,
+): Promise<void> => {
+    // req.body is pre-validated, sanitized, and typed by your Zod middleware
+    const previewData = await invoiceService.previewInvoice(req.body);
+    
+    // Status 200 is used because we are calculating state, not creating resources
+    res.status(200).json(previewData);
 
 };
 export const findAll = async (req: Request, res: Response) => {

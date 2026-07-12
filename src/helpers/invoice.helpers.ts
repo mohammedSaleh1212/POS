@@ -10,19 +10,16 @@ const SUPPLIER_INVOICE_TYPES = new Set<InvoiceType>(["PURCHASE", "RETURN_PURCHAS
 const RETURN_INVOICE_TYPES = new Set<InvoiceType>(["RETURN_SALE", "RETURN_PURCHASE"]);
 const STOCK_DECREASE_INVOICE_TYPES = new Set<InvoiceType>(["SALE", "RETURN_PURCHASE"]);
 
+type InvoiceContactValidationInput = {
+  type: InvoiceType;
+  contactId?: number | undefined;
+};
+
 export async function validateInvoiceContact(
   tx: Prisma.TransactionClient,
-  data: CreateInvoiceInput
+  data: InvoiceContactValidationInput
 ) {
-  const customerInvoiceTypes = new Set<InvoiceType>([
-    "SALE",
-    "RETURN_SALE",
-  ]);
 
-  const supplierInvoiceTypes = new Set<InvoiceType>([
-    "PURCHASE",
-    "RETURN_PURCHASE",
-  ]);
 
   if (
     SUPPLIER_INVOICE_TYPES.has(data.type) &&
@@ -66,9 +63,13 @@ export async function validateInvoiceContact(
 
   return contact;
 }
+type OriginalInvoiceReturnValidationInput = {
+  type: "PURCHASE" | "SALE" | "RETURN_PURCHASE" | "RETURN_SALE"; // Or use your Prisma InvoiceType enum
+  originalInvoiceId?: number | undefined;
+};
 export const validateOriginalInvoiceForReturn = async (
   tx: Prisma.TransactionClient,
-  data: CreateInvoiceInput
+  data: OriginalInvoiceReturnValidationInput
 ) => {
 
   if (!RETURN_INVOICE_TYPES.has(data.type)) {
@@ -120,9 +121,12 @@ export const validateOriginalInvoiceForReturn = async (
 
   return originalInvoice;
 };
+type ProductValidationItemInput = {
+  productId: number;
+};
 export async function loadAndValidateProducts(
   tx: Prisma.TransactionClient,
-  items: InvoiceItemInput[]
+  items: ProductValidationItemInput[]
 ) {
   if (!items || items.length === 0) {
     throw new AppError(400, "Invoice_must_contain_at_least_one_item");
@@ -155,10 +159,17 @@ export async function loadAndValidateProducts(
   return productMap;
 }
 // Make sure you import Prisma types if needed for the originalInvoice type
-
+type BuildInvoiceItemsInput = {
+  type: "PURCHASE" | "SALE" | "RETURN_PURCHASE" | "RETURN_SALE"; // Or your InvoiceType enum
+  items: {
+    productId: number;
+    quantity: number;
+    unitPrice?: number | undefined;
+  }[];
+};
 export const buildInvoiceItemsAndTotals = (
-  data: CreateInvoiceInput,
-  productMap: Map<number, Product>, // Replace 'any' with your actual Product type from Prisma
+  data: BuildInvoiceItemsInput,
+  productMap: Map<number, Product>,
 originalInvoice: Prisma.InvoiceGetPayload<{
   include: {
     items: true;
@@ -285,7 +296,7 @@ export const calculateTax = (
   return { taxRate, taxAmount, totalAmount };
 };
 
-const determineInvoiceStatus = (
+export const determineInvoiceStatus = (
   inputPaidAmount: number | string | Decimal | undefined | null,
   totalAmount: Decimal
 ) => {
@@ -295,8 +306,9 @@ const determineInvoiceStatus = (
   if (paidAmount.greaterThanOrEqualTo(totalAmount)) {
     status = InvoiceStatus.PAID;
   } else if (paidAmount.greaterThan(0)) {
-    status = InvoiceStatus.PARTIAL;
+    status = InvoiceStatus.PARTIAL; 
   }
+  
 
   return { paidAmount, status };
 };
